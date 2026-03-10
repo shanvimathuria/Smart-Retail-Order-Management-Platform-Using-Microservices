@@ -1,19 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiUser, FiMenu, FiX, FiLogOut } from 'react-icons/fi';
+import { FiShoppingCart, FiUser, FiMenu, FiX, FiLogOut, FiPackage } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import './Navigation.css';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
+    setIsDropdownOpen(false);
     logout();
     navigate('/');
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getUserInitials = () => {
+    if (!user) return '';
+    const first = user.firstName?.[0] ?? '';
+    const last = user.lastName?.[0] ?? '';
+    return (first + last).toUpperCase() || (user.email[0]?.toUpperCase() ?? 'U');
   };
 
   return (
@@ -45,22 +65,39 @@ const Navigation: React.FC = () => {
             </Link>
 
             {isAuthenticated ? (
-              <div className="user-menu">
-                <div className="user-info">
-                  <FiUser />
+              <div className="user-menu" ref={dropdownRef}>
+                <button
+                  className="user-info"
+                  onClick={() => setIsDropdownOpen((prev) => !prev)}
+                  type="button"
+                >
+                  <span className="user-avatar">{getUserInitials()}</span>
                   <span className="user-name">{user?.firstName}</span>
-                </div>
-                <div className="user-dropdown">
-                  <Link to="/profile" className="dropdown-item">
-                    Profile
-                  </Link>
-                  <Link to="/orders" className="dropdown-item">
-                    Orders
-                  </Link>
-                  <button onClick={handleLogout} className="dropdown-item logout">
-                    <FiLogOut /> Logout
-                  </button>
-                </div>
+                </button>
+                {isDropdownOpen && (
+                  <div className="user-dropdown">
+                    <div className="dropdown-header">
+                      <span className="dropdown-avatar">{getUserInitials()}</span>
+                      <div className="dropdown-user-details">
+                        <span className="dropdown-user-name">
+                          {user?.firstName} {user?.lastName}
+                        </span>
+                        <span className="dropdown-user-email">{user?.email}</span>
+                      </div>
+                    </div>
+                    <div className="dropdown-divider" />
+                    <Link to="/profile" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                      <FiUser /> Profile
+                    </Link>
+                    <Link to="/orders" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                      <FiPackage /> Orders
+                    </Link>
+                    <div className="dropdown-divider" />
+                    <button onClick={handleLogout} className="dropdown-item logout">
+                      <FiLogOut /> Logout
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="auth-links">

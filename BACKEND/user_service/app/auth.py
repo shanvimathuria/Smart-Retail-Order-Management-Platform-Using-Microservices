@@ -2,16 +2,22 @@ from datetime import datetime, timedelta
 import os
 
 import bcrypt
-from jose import jwt
 from dotenv import load_dotenv
+from jose import jwt
 
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 MAX_BCRYPT_PASSWORD_BYTES = 72
+
+
+def _require_secret_key() -> str:
+    if not SECRET_KEY:
+        raise RuntimeError("SECRET_KEY is not configured")
+    return SECRET_KEY
 
 
 def _encode_password(password: str) -> bytes:
@@ -40,4 +46,4 @@ def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, _require_secret_key(), algorithm=ALGORITHM)
