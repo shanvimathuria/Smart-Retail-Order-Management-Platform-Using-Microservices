@@ -62,22 +62,22 @@ async def update_category(
     return category
 
 
-@router.delete("/{category_id}")
-async def delete_category(category_id: int, db: AsyncSession = Depends(get_db)):
-    category = await get_category_or_404(category_id, db)
+# @router.delete("/{category_id}")
+# async def delete_category(category_id: int, db: AsyncSession = Depends(get_db)):
+#     category = await get_category_or_404(category_id, db)
 
-    product_result = await db.execute(
-        select(models.Product).where(models.Product.category_id == category_id)
-    )
-    linked_product = product_result.scalar_one_or_none()
+#     product_result = await db.execute(
+#         select(models.Product).where(models.Product.category_id == category_id)
+#     )
+#     linked_product = product_result.scalar_one_or_none()
 
-    if linked_product:
-        raise HTTPException(
-            status_code=400,
-            detail="Cannot delete category with linked products"
-        )
+#     if linked_product:
+#         raise HTTPException(
+#             status_code=400,
+#             detail="Cannot delete category with linked products"
+#         )
 
-    await db.delete(category)
-    await db.commit()
+#     await db.delete(category)
+#     await db.commit()
 
-    return {"message": "Category deleted successfully"}
+#     return {"message": "Category deleted successfully"}
