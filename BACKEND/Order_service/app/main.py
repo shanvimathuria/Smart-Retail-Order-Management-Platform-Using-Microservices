@@ -11,7 +11,7 @@ app = FastAPI(
 )
 
 # Include order router
-app.include_router(orders.router, prefix="/orders", tags=["Orders"])
+app.include_router(orders.router)
 
 
 @app.get("/")
