@@ -61,9 +61,9 @@ async def login(user: schemas.UserLogin, db: AsyncSession = Depends(get_db)):
         "token_type": "bearer"
     }
 
-#     # ✅ GET ALL USERS
-# @router.get("/", response_model=List[schemas.UserResponse])
-# async def get_users(db: AsyncSession = Depends(get_db)):
-#     result = await db.execute(select(models.User))
-#     users = result.scalars().all()
-#     return users
+    # ✅ GET ALL USERS
+@router.get("/", response_model=List[schemas.UserResponse])
+async def get_users(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.User))
+    users = result.scalars().all()
+    return users
