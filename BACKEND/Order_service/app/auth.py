@@ -2,17 +2,20 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 load_dotenv()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+bearer_scheme = HTTPBearer(bearerFormat="JWT")
 
 
-def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
+def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+) -> int:
     secret_key = os.getenv("SECRET_KEY")
     algorithm = os.getenv("ALGORITHM", "HS256")
+    token = credentials.credentials
 
     if not secret_key:
         raise HTTPException(
