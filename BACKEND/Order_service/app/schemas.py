@@ -29,10 +29,14 @@ class OrderCreate(BaseModel):
     @classmethod
     def validate_payment_method(cls, value: str) -> str:
         normalized_value = value.strip().upper()
+
+        if normalized_value == "UPI":
+            return "ONLINE"
+
         allowed_methods = {"COD", "ONLINE"}
 
         if normalized_value not in allowed_methods:
-            raise ValueError("payment_method must be either COD or ONLINE")
+            raise ValueError("payment_method must be either COD, UPI, or ONLINE")
 
         return normalized_value
 

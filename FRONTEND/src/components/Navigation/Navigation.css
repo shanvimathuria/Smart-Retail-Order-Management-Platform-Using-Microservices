@@ -289,6 +289,14 @@
   gap: 1rem;
 }
 
+.auth-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
 .mobile-menu-toggle {
   display: none;
   background: none;

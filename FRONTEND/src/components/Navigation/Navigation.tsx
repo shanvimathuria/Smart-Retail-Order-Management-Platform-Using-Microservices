@@ -3,19 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiUser, FiMenu, FiX, FiLogOut, FiPackage } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useToast } from '../../context/ToastContext';
 import './Navigation.css';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isAuthLoading } = useAuth();
   const { getTotalItems } = useCart();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
+    const userName = user?.firstName || 'user';
     setIsDropdownOpen(false);
     logout();
+    showToast(`Goodbye ${userName}! You have been logged out.`);
     navigate('/');
   };
 
@@ -64,7 +68,11 @@ const Navigation: React.FC = () => {
               )}
             </Link>
 
-            {isAuthenticated ? (
+            {isAuthLoading ? (
+              <div className="auth-loading">
+                <span>Loading...</span>
+              </div>
+            ) : isAuthenticated ? (
               <div className="user-menu" ref={dropdownRef}>
                 <button
                   className="user-info"

@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiMinus, FiPlus, FiTrash2, FiShoppingBag, FiArrowLeft } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatCurrency } from '../../utils/currency';
+import CheckoutModal from './CheckoutModal';
 import './Cart.css';
 
 const Cart: React.FC = () => {
   const { items, updateQuantity, removeItem, clearCart, getTotalPrice } = useCart();
+  const { isAuthenticated } = useAuth();
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
   if (items.length === 0) {
     return (
@@ -25,6 +29,20 @@ const Cart: React.FC = () => {
       </div>
     );
   }
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login?redirect=/cart';
+      return;
+    }
+    setIsCheckoutModalOpen(true);
+  };
+
+  const handleOrderComplete = () => {
+    clearCart();
+    setIsCheckoutModalOpen(false);
+  };
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     if (newQuantity < 1) {
@@ -159,7 +177,7 @@ const Cart: React.FC = () => {
             </div>
 
             <div className="checkout-actions">
-              <button className="checkout-btn">
+              <button className="checkout-btn" onClick={handleCheckout}>
                 Proceed to Checkout
               </button>
               
@@ -199,6 +217,14 @@ const Cart: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <CheckoutModal 
+        isOpen={isCheckoutModalOpen}
+        onClose={() => setIsCheckoutModalOpen(false)}
+        cartItems={items}
+        totalAmount={finalTotal}
+        onOrderComplete={handleOrderComplete}
+      />
     </div>
   );
 };

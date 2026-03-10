@@ -9,18 +9,39 @@ load_dotenv()
 
 bearer_scheme = HTTPBearer(bearerFormat="JWT")
 
+SECRET_KEY_ENV_VARS = (
+    "ORDER_SERVICE_SECRET_KEY",
+    "JWT_SECRET_KEY",
+    "USER_SERVICE_SECRET_KEY",
+    "SECRET_KEY",
+)
+
+ALGORITHM_ENV_VARS = (
+    "ORDER_SERVICE_JWT_ALGORITHM",
+    "JWT_ALGORITHM",
+    "ALGORITHM",
+)
+
+
+def _get_jwt_settings() -> tuple[str | None, str]:
+    secret_key = next((os.getenv(name) for name in SECRET_KEY_ENV_VARS if os.getenv(name)), None)
+    algorithm = next((os.getenv(name) for name in ALGORITHM_ENV_VARS if os.getenv(name)), "HS256")
+    return secret_key, algorithm
+
 
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> int:
-    secret_key = os.getenv("SECRET_KEY")
-    algorithm = os.getenv("ALGORITHM", "HS256")
+    secret_key, algorithm = _get_jwt_settings()
     token = credentials.credentials
 
     if not secret_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT configuration is missing for order service"
+            detail=(
+                "JWT configuration is missing for order service. "
+                f"Set one of: {', '.join(SECRET_KEY_ENV_VARS)}"
+            )
         )
 
     try:
