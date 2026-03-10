@@ -21,11 +21,16 @@ async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db))
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    try:
+        hashed_password = hash_password(user.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     new_user = models.User(
         name=user.name,
         phone=user.phone,
         email=user.email,
-        password=hash_password(user.password)
+        password=hashed_password
     )
 
     db.add(new_user)

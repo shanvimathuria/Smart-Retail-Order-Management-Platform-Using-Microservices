@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import update, delete
 
 from app.database import get_db
 from app import models, schemas
@@ -12,13 +11,27 @@ router = APIRouter(
 )
 
 
+async def get_category_or_404(category_id: int, db: AsyncSession) -> models.Category:
+    result = await db.execute(
+        select(models.Category).where(models.Category.id == category_id)
+    )
+    category = result.scalar_one_or_none()
+
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    return category
+
+
 # 🔹 CREATE PRODUCT
 @router.post("/", response_model=schemas.ProductResponse)
 async def create_product(
     product: schemas.ProductCreate,
     db: AsyncSession = Depends(get_db)
 ):
-    new_product = models.Product(**product.dict())
+    await get_category_or_404(product.category_id, db)
+
+    new_product = models.Product(**product.model_dump())
     db.add(new_product)
     await db.commit()
     await db.refresh(new_product)
@@ -62,7 +75,12 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    for key, value in product_update.dict(exclude_unset=True).items():
+    update_data = product_update.model_dump(exclude_unset=True)
+
+    if "category_id" in update_data:
+        await get_category_or_404(update_data["category_id"], db)
+
+    for key, value in update_data.items():
         setattr(product, key, value)
 
     await db.commit()
