@@ -23,16 +23,16 @@ async def get_category_or_404(category_id: int, db: AsyncSession) -> models.Cate
     return category
 
 
-# @router.post("/", response_model=schemas.CategoryResponse)
-# async def create_category(
-#     category: schemas.CategoryCreate,
-#     db: AsyncSession = Depends(get_db)
-# ):
-#     new_category = models.Category(**category.model_dump())
-#     db.add(new_category)
-#     await db.commit()
-#     await db.refresh(new_category)
-#     return new_category
+@router.post("/", response_model=schemas.CategoryResponse)
+async def create_category(
+    category: schemas.CategoryCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    new_category = models.Category(**category.model_dump())
+    db.add(new_category)
+    await db.commit()
+    await db.refresh(new_category)
+    return new_category
 
 
 @router.get("/", response_model=list[schemas.CategoryResponse])
