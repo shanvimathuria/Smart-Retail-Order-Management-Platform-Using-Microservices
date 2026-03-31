@@ -22,20 +22,19 @@ export interface OrderResponse {
   total_amount: number;
   status: string;
   created_at: string;
-  items?: OrderItem[];
+  payment_method?: 'COD' | 'UPI' | string;
+  items: OrderItem[];
 }
 
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const authHeaders = getStoredAuthHeader();
-  
-  // Debug: Check if we have authentication
-  if (!authHeaders.Authorization) {
-    throw new Error('User not authenticated. Please login to place orders.');
+  // ✅ FIXED: safer typing
+  const authHeaders = getStoredAuthHeader() as Record<string, string> | undefined;
+
+  // ✅ FIXED: use bracket notation + null check
+  if (!authHeaders || !authHeaders["Authorization"]) {
+    throw new Error('User not authenticated. Please login to access orders.');
   }
-  
-  // Debug: Log authentication headers (remove in production)
-  console.log('Order API request headers:', { ...authHeaders });
-  
+
   let response: Response;
 
   try {
@@ -61,8 +60,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
 
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
-    
-    // Handle specific HTTP status codes
+
     if (response.status === 401) {
       errorMessage = 'Authentication failed. Please login again.';
     } else if (response.status === 403) {
@@ -71,7 +69,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
       try {
         const errorData = JSON.parse(responseText);
         if (errorData.detail) {
-          errorMessage = Array.isArray(errorData.detail) 
+          errorMessage = Array.isArray(errorData.detail)
             ? errorData.detail.map((d: any) => d.msg || d).join(', ')
             : errorData.detail;
         } else if (errorData.message) {
@@ -81,7 +79,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
         errorMessage = responseText.substring(0, 200);
       }
     }
-    
+
     throw new Error(errorMessage);
   }
 
@@ -96,6 +94,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   }
 };
 
+// API functions for orders
 export const placeOrder = async (orderData: CreateOrderRequest): Promise<OrderResponse> => {
   return await requestJson<OrderResponse>('/orders/place', {
     method: 'POST',
@@ -103,10 +102,10 @@ export const placeOrder = async (orderData: CreateOrderRequest): Promise<OrderRe
   });
 };
 
-export const getMyOrders = async (): Promise<OrderResponse[]> => {
+export const getUserOrders = async (): Promise<OrderResponse[]> => {
   return await requestJson<OrderResponse[]>('/orders/me');
 };
 
-export const getOrderById = async (orderId: number): Promise<OrderResponse> => {
+export const getOrder = async (orderId: number): Promise<OrderResponse> => {
   return await requestJson<OrderResponse>(`/orders/${orderId}`);
 };

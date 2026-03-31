@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiShoppingCart, FiUser, FiMenu, FiX, FiLogOut, FiPackage } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -13,7 +13,13 @@ const Navigation: React.FC = () => {
   const { getTotalItems } = useCart();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Hide navigation on admin routes
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
 
   const handleLogout = () => {
     const userName = user?.firstName || 'user';

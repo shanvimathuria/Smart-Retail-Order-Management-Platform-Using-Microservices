@@ -237,8 +237,16 @@ export const loginUser = async (email: string, password: string): Promise<AuthSe
 };
 
 export const getStoredAuthHeader = (): HeadersInit => {
-  const token = localStorage.getItem('auth_token');
-  const tokenType = localStorage.getItem('auth_token_type') ?? 'Bearer';
+  const rawToken = localStorage.getItem('auth_token');
+  const rawTokenType = localStorage.getItem('auth_token_type');
+
+  const token = rawToken?.trim().replace(/^"|"$/g, '');
+  const normalizedTokenType = rawTokenType?.trim().replace(/^"|"$/g, '');
+  const tokenType = normalizedTokenType
+    ? normalizedTokenType.toLowerCase() === 'bearer'
+      ? 'Bearer'
+      : normalizedTokenType
+    : 'Bearer';
 
   if (!token) {
     return {};

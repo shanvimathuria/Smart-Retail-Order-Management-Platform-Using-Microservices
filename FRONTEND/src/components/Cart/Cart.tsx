@@ -200,21 +200,6 @@ const Cart: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <div className="recommended-products">
-            <h4>You might also like</h4>
-            <p>Based on items in your cart</p>
-            <div className="recommendations">
-              <div className="recommendation-item">
-                <img src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop" alt="Recommended" />
-                <div className="rec-details">
-                  <span className="rec-name">Wireless Mouse</span>
-                  <span className="rec-price">{formatCurrency(29.99)}</span>
-                </div>
-                <button className="add-rec">+</button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

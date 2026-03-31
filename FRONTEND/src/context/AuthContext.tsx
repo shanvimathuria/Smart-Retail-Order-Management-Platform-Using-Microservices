@@ -31,13 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const persistSession = (nextUser: User, nextToken: string, nextTokenType: string) => {
+    const normalizedTokenType = (nextTokenType || 'Bearer').trim();
+    const safeTokenType = normalizedTokenType.toLowerCase() === 'bearer' ? 'Bearer' : normalizedTokenType;
+
     setUser(nextUser);
     setToken(nextToken);
-    setTokenType(nextTokenType);
+    setTokenType(safeTokenType);
     setIsAuthenticated(true);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(nextUser));
     localStorage.setItem(AUTH_TOKEN_KEY, nextToken);
-    localStorage.setItem(AUTH_TOKEN_TYPE_KEY, nextTokenType);
+    localStorage.setItem(AUTH_TOKEN_TYPE_KEY, safeTokenType);
   };
 
   const login = async (email: string, password: string): Promise<void> => {
@@ -61,6 +64,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(AUTH_TOKEN_TYPE_KEY);
   };
 
+  const updateProfile = async (userData: Partial<User>): Promise<void> => {
+    if (!user) {
+      throw new Error('No user logged in');
+    }
+
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Update user data
+    const updatedUser = { ...user, ...userData };
+    setUser(updatedUser);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedUser));
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -69,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login,
       signup,
       logout,
+      updateProfile,
       isAuthenticated,
       isAuthLoading
     }}>

@@ -13,6 +13,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 @router.post("/register", response_model=schemas.UserResponse)
 async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db)):
 
+    # Check if email already exists
     result = await db.execute(
         select(models.User).where(models.User.email == user.email)
     )
@@ -20,6 +21,15 @@ async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db))
 
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Check if phone already exists
+    result = await db.execute(
+        select(models.User).where(models.User.phone == user.phone)
+    )
+    existing_phone = result.scalar_one_or_none()
+
+    if existing_phone:
+        raise HTTPException(status_code=400, detail="Phone number already registered")
 
     try:
         hashed_password = hash_password(user.password)

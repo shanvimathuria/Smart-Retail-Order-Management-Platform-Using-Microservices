@@ -48,3 +48,25 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
   return records.map((record: BackendProductRecord) => mapBackendProduct(record, categories));
 };
+
+export const getProductById = async (productId: string): Promise<Product | null> => {
+  try {
+    const [categories, response] = await Promise.all([
+      fetchCategories(),
+      fetch(`${INVENTORY_API_BASE_URL}/products/${productId}`),
+    ]);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`Failed to fetch product: ${response.status}`);
+    }
+
+    const record: BackendProductRecord = await response.json();
+    return mapBackendProduct(record, categories);
+  } catch (error) {
+    console.error('Error fetching product by ID:', error);
+    throw error;
+  }
+};

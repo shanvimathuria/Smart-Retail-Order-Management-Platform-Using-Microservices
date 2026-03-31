@@ -2,12 +2,21 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import get_db
+from contextlib import asynccontextmanager
+from app.database import get_db, engine
 from app.routers import orders
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    yield
+    # Shutdown - dispose engine to close all connections
+    await engine.dispose()
 
 app = FastAPI(
     title="Order Service",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 

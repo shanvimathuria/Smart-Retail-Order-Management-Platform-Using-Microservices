@@ -55,6 +55,9 @@ export interface User {
   firstName: string;
   lastName: string;
   phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
   createdAt?: string;
   avatar?: string;
 }
@@ -84,6 +87,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: SignupFormData) => Promise<void>;
   logout: () => void;
+  updateProfile: (userData: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
   isAuthLoading: boolean;
 }
