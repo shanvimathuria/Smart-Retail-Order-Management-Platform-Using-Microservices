@@ -52,13 +52,15 @@ const readValidationMessage = (detail: unknown): string => {
 
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const authHeaders = normalizeHeaders(getStoredAuthHeader());
+
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...authHeaders,
     ...normalizeHeaders(init?.headers),
   };
 
-  if (!requestHeaders.Authorization) {
+  // ✅ FINAL FIX: bracket notation (no TS error)
+  if (!requestHeaders["Authorization"]) {
     throw new Error('User not authenticated. Please login to access orders.');
   }
 
