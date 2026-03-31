@@ -27,11 +27,18 @@ export interface OrderResponse {
 }
 
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  // ✅ FIXED: safer typing
-  const authHeaders = getStoredAuthHeader() as Record<string, string> | undefined;
+  // ✅ FIX: normalize HeadersInit → plain object
+  const rawHeaders = getStoredAuthHeader();
 
-  // ✅ FIXED: use bracket notation + null check
-  if (!authHeaders || !authHeaders["Authorization"]) {
+  const authHeaders: Record<string, string> =
+    rawHeaders instanceof Headers
+      ? Object.fromEntries(rawHeaders.entries())
+      : Array.isArray(rawHeaders)
+      ? Object.fromEntries(rawHeaders)
+      : rawHeaders || {};
+
+  // ✅ FIX: safe access
+  if (!authHeaders["Authorization"]) {
     throw new Error('User not authenticated. Please login to access orders.');
   }
 
