@@ -26,7 +26,8 @@ export interface OrderResponse {
   items: OrderItem[];
 }
 
-const normalizeHeaders = (headers: HeadersInit | undefined): Record<string, string> => {
+// ✅ NO HeadersInit anywhere
+const normalizeHeaders = (headers: any): Record<string, string> => {
   const result: Record<string, string> = {};
 
   if (!headers) return result;
@@ -45,7 +46,7 @@ const normalizeHeaders = (headers: HeadersInit | undefined): Record<string, stri
     return result;
   }
 
-  return headers as Record<string, string>;
+  return headers;
 };
 
 const readValidationMessage = (detail: unknown): string => {
@@ -58,18 +59,16 @@ const readValidationMessage = (detail: unknown): string => {
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const authHeaders = normalizeHeaders(getStoredAuthHeader());
 
-  // ✅ CHECK AUTH HERE (NOT from requestHeaders)
   const authHeader = authHeaders["Authorization"];
-
   if (!authHeader) {
     throw new Error('User not authenticated. Please login to access orders.');
   }
 
-  const requestHeaders = {
+  const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...authHeaders,
     ...normalizeHeaders(init?.headers),
-  } as Record<string, string>;
+  };
 
   let response: Response;
 
@@ -80,7 +79,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
     });
   } catch (error) {
     console.error('Order API request failed:', error);
-    throw new Error('Unable to reach the order service. Check that the backend is running.');
+    throw new Error('Unable to reach the order service.');
   }
 
   const responseText = await response.text();
@@ -91,7 +90,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
     if (response.status === 401) {
       errorMessage = 'Authentication failed. Please login again.';
     } else if (response.status === 403) {
-      errorMessage = 'Access denied. Please check your permissions.';
+      errorMessage = 'Access denied.';
     } else if (responseText) {
       try {
         const errorData = JSON.parse(responseText);
