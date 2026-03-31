@@ -26,40 +26,48 @@ export interface OrderResponse {
   items: OrderItem[];
 }
 
+// ✅ FORCE convert HeadersInit → plain object safely
 const normalizeHeaders = (headers: HeadersInit | undefined): Record<string, string> => {
-  if (!headers) {
-    return {};
-  }
+  const result: Record<string, string> = {};
+
+  if (!headers) return result;
 
   if (headers instanceof Headers) {
-    return Object.fromEntries(headers.entries());
+    headers.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
   }
 
   if (Array.isArray(headers)) {
-    return Object.fromEntries(headers);
+    headers.forEach(([key, value]) => {
+      result[key] = value;
+    });
+    return result;
   }
 
-  return headers;
+  // final fallback
+  return headers as Record<string, string>;
 };
 
 const readValidationMessage = (detail: unknown): string => {
   if (detail && typeof detail === 'object' && 'msg' in (detail as Record<string, unknown>)) {
     return String((detail as Record<string, unknown>).msg);
   }
-
   return String(detail);
 };
 
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const authHeaders = normalizeHeaders(getStoredAuthHeader());
 
-  const requestHeaders: Record<string, string> = {
+  // ✅ FORCE type as plain object (breaks TS confusion completely)
+  const requestHeaders = {
     'Content-Type': 'application/json',
     ...authHeaders,
     ...normalizeHeaders(init?.headers),
-  };
+  } as Record<string, string>;
 
-  // ✅ FINAL FIX: bracket notation (no TS error)
+  // ✅ SAFE ACCESS
   if (!requestHeaders["Authorization"]) {
     throw new Error('User not authenticated. Please login to access orders.');
   }
@@ -77,6 +85,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   }
 
   let responseText: string;
+
   try {
     responseText = await response.text();
   } catch {
@@ -119,18 +128,18 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   }
 };
 
-// API functions for orders
+// API functions
 export const placeOrder = async (orderData: CreateOrderRequest): Promise<OrderResponse> => {
-  return await requestJson<OrderResponse>('/orders/place', {
+  return requestJson<OrderResponse>('/orders/place', {
     method: 'POST',
     body: JSON.stringify(orderData),
   });
 };
 
 export const getUserOrders = async (): Promise<OrderResponse[]> => {
-  return await requestJson<OrderResponse[]>('/orders/me');
+  return requestJson<OrderResponse[]>('/orders/me');
 };
 
 export const getOrder = async (orderId: number): Promise<OrderResponse> => {
-  return await requestJson<OrderResponse>(`/orders/${orderId}`);
+  return requestJson<OrderResponse>(`/orders/${orderId}`);
 };
