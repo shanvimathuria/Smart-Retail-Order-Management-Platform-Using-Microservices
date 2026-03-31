@@ -16,11 +16,6 @@ const Navigation: React.FC = () => {
   const location = useLocation();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Hide navigation on admin routes
-  if (location.pathname.startsWith('/admin')) {
-    return null;
-  }
-
   const handleLogout = () => {
     const userName = user?.firstName || 'user';
     setIsDropdownOpen(false);
@@ -38,6 +33,11 @@ const Navigation: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Hide navigation on admin routes
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
 
   const getUserInitials = () => {
     if (!user) return '';

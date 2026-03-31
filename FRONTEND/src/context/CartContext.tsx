@@ -1,44 +1,58 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import type { CartContextType, CartItem, Product } from '../types';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const readStoredCart = (cartKey: string): CartItem[] => {
+  try {
+    const storedCart = localStorage.getItem(cartKey);
+    return storedCart ? (JSON.parse(storedCart) as CartItem[]) : [];
+  } catch {
+    localStorage.removeItem(cartKey);
+    return [];
+  }
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [cartByKey, setCartByKey] = useState<Record<string, CartItem[]>>({});
   const { user, isAuthenticated, isAuthLoading } = useAuth();
 
-  // Get cart key based on user
-  const getCartKey = () => {
+  const cartKey = useMemo(() => {
     if (isAuthenticated && user) {
       return `cart_${user.id}`;
     }
     return 'cart_guest';
+  }, [isAuthenticated, user]);
+
+  const items = useMemo(() => {
+    if (isAuthLoading) {
+      return [];
+    }
+
+    const cachedItems = cartByKey[cartKey];
+    if (cachedItems) {
+      return cachedItems;
+    }
+
+    return readStoredCart(cartKey);
+  }, [cartByKey, cartKey, isAuthLoading]);
+
+  const updateCurrentCart = (updater: (currentItems: CartItem[]) => CartItem[]) => {
+    setCartByKey((currentCartByKey) => {
+      const currentItems = currentCartByKey[cartKey] ?? readStoredCart(cartKey);
+      const nextItems = updater(currentItems);
+      localStorage.setItem(cartKey, JSON.stringify(nextItems));
+
+      return {
+        ...currentCartByKey,
+        [cartKey]: nextItems,
+      };
+    });
   };
 
-  // Load cart from localStorage when user changes or app starts
-  useEffect(() => {
-    if (isAuthLoading) return; // Don't load cart while authentication is loading
-    
-    const cartKey = getCartKey();
-    const storedCart = localStorage.getItem(cartKey);
-    if (storedCart) {
-      setItems(JSON.parse(storedCart));
-    } else {
-      setItems([]); // Clear cart if no data for current user
-    }
-  }, [user, isAuthenticated, isAuthLoading]);
-
-  // Save cart to localStorage whenever items change, but only if not loading
-  useEffect(() => {
-    if (isAuthLoading) return;
-    
-    const cartKey = getCartKey();
-    localStorage.setItem(cartKey, JSON.stringify(items));
-  }, [items, user, isAuthenticated, isAuthLoading]);
-
   const addItem = (product: Product, quantity: number = 1) => {
-    setItems(currentItems => {
+    updateCurrentCart((currentItems) => {
       const existingItem = currentItems.find(item => item.product.id === product.id);
       
       if (existingItem) {
@@ -54,7 +68,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const removeItem = (productId: string) => {
-    setItems(currentItems => currentItems.filter(item => item.product.id !== productId));
+    updateCurrentCart((currentItems) => currentItems.filter(item => item.product.id !== productId));
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -63,7 +77,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    setItems(currentItems =>
+    updateCurrentCart((currentItems) =>
       currentItems.map(item =>
         item.product.id === productId
           ? { ...item, quantity }
@@ -73,7 +87,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const clearCart = () => {
-    setItems([]);
+    updateCurrentCart(() => []);
   };
 
   const getTotalPrice = (): number => {

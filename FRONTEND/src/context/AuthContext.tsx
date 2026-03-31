@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import type { AuthContextType, SignupFormData, User } from '../types';
 import { loginUser, registerUser } from '../services/auth';
 
@@ -8,27 +8,40 @@ const AUTH_USER_KEY = 'auth_user';
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_TOKEN_TYPE_KEY = 'auth_token_type';
 
+const readAuthSession = (): { user: User | null; token: string | null; tokenType: string | null } => {
+  if (typeof window === 'undefined') {
+    return { user: null, token: null, tokenType: null };
+  }
+
+  const storedUser = localStorage.getItem(AUTH_USER_KEY);
+  const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+  const storedTokenType = localStorage.getItem(AUTH_TOKEN_TYPE_KEY);
+
+  if (!storedUser || !storedToken) {
+    return { user: null, token: null, tokenType: null };
+  }
+
+  try {
+    return {
+      user: JSON.parse(storedUser) as User,
+      token: storedToken,
+      tokenType: storedTokenType ?? 'Bearer',
+    };
+  } catch {
+    localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_TOKEN_TYPE_KEY);
+    return { user: null, token: null, tokenType: null };
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [tokenType, setTokenType] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem(AUTH_USER_KEY);
-    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-    const storedTokenType = localStorage.getItem(AUTH_TOKEN_TYPE_KEY);
-
-    if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
-      setToken(storedToken);
-      setTokenType(storedTokenType ?? 'Bearer');
-      setIsAuthenticated(true);
-    }
-
-    setIsAuthLoading(false);
-  }, []);
+  const [initialSession] = useState(readAuthSession);
+  const [user, setUser] = useState<User | null>(initialSession.user);
+  const [token, setToken] = useState<string | null>(initialSession.token);
+  const [tokenType, setTokenType] = useState<string | null>(initialSession.tokenType);
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(initialSession.user && initialSession.token));
+  const [isAuthLoading] = useState(false);
 
   const persistSession = (nextUser: User, nextToken: string, nextTokenType: string) => {
     const normalizedTokenType = (nextTokenType || 'Bearer').trim();

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FiFilter, FiGrid, FiList, FiSearch } from 'react-icons/fi';
 import { useCategories } from '../hooks/useCategories';
 import { useProducts } from '../hooks/useProducts';
-import type { Product } from '../types';
 import { formatCurrency } from '../utils/currency';
 import ProductCard from '../components/Products/ProductCard';
 import './Products.css';
@@ -17,11 +16,8 @@ type QuickFilterState = {
 const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { products, isLoading: isProductsLoading, error: productsError } = useProducts();
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [quickFilters, setQuickFilters] = useState<QuickFilterState>({
@@ -40,18 +36,10 @@ const Products: React.FC = () => {
   const maxAvailablePrice = products.length > 0 ? Math.max(...products.map((product) => product.price)) : 0;
   const effectiveMinPrice = priceRange.min.trim() ? Number(priceRange.min) : 0;
   const effectiveMaxPrice = priceRange.max.trim() ? Number(priceRange.max) : maxAvailablePrice || Number.MAX_SAFE_INTEGER;
+  const selectedCategory = searchParams.get('category') || 'all';
+  const searchQuery = searchParams.get('search') || '';
 
-  // Initialize from URL parameters
-  useEffect(() => {
-    const category = searchParams.get('category') || 'all';
-    const search = searchParams.get('search') || '';
-    
-    setSelectedCategory(category);
-    setSearchQuery(search);
-  }, [searchParams]);
-
-  // Filter and sort products
-  useEffect(() => {
+  const filteredProducts = useMemo(() => {
     let filtered = [...products];
 
     // Filter by category
@@ -103,11 +91,10 @@ const Products: React.FC = () => {
       }
     });
 
-    setFilteredProducts(filtered);
+    return filtered;
   }, [effectiveMaxPrice, effectiveMinPrice, products, quickFilters, searchQuery, selectedCategory, sortBy]);
 
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
     const params = new URLSearchParams(searchParams);
     if (category === 'all') {
       params.delete('category');
@@ -118,7 +105,6 @@ const Products: React.FC = () => {
   };
 
   const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
     const params = new URLSearchParams(searchParams);
     if (query.trim()) {
       params.set('search', query);
@@ -315,8 +301,6 @@ const Products: React.FC = () => {
             <button
               className="reset-filters"
               onClick={() => {
-                setSelectedCategory('all');
-                setSearchQuery('');
                 setSortBy('name');
                 setPriceRange({ min: '', max: '' });
                 setQuickFilters({
@@ -354,8 +338,6 @@ const Products: React.FC = () => {
                 <h3>No products found</h3>
                 <p>Try adjusting your search or filter criteria.</p>
                 <button onClick={() => {
-                  setSelectedCategory('all');
-                  setSearchQuery('');
                   setSortBy('name');
                   setPriceRange({ min: '', max: '' });
                   setQuickFilters({

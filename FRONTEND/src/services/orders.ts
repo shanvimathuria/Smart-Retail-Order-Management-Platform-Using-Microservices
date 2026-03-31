@@ -26,19 +26,39 @@ export interface OrderResponse {
   items: OrderItem[];
 }
 
+const normalizeHeaders = (headers: HeadersInit | undefined): Record<string, string> => {
+  if (!headers) {
+    return {};
+  }
+
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+
+  return headers;
+};
+
+const readValidationMessage = (detail: unknown): string => {
+  if (detail && typeof detail === 'object' && 'msg' in (detail as Record<string, unknown>)) {
+    return String((detail as Record<string, unknown>).msg);
+  }
+
+  return String(detail);
+};
+
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  // ✅ FIX: normalize HeadersInit → plain object
-  const rawHeaders = getStoredAuthHeader();
+  const authHeaders = normalizeHeaders(getStoredAuthHeader());
+  const requestHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...authHeaders,
+    ...normalizeHeaders(init?.headers),
+  };
 
-  const authHeaders: Record<string, string> =
-    rawHeaders instanceof Headers
-      ? Object.fromEntries(rawHeaders.entries())
-      : Array.isArray(rawHeaders)
-      ? Object.fromEntries(rawHeaders)
-      : rawHeaders || {};
-
-  // ✅ FIX: safe access
-  if (!authHeaders["Authorization"]) {
+  if (!requestHeaders.Authorization) {
     throw new Error('User not authenticated. Please login to access orders.');
   }
 
@@ -46,12 +66,8 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
 
   try {
     response = await fetch(`${ORDER_API_BASE_URL}${path}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-        ...(init?.headers ?? {}),
-      },
       ...init,
+      headers: requestHeaders,
     });
   } catch (error) {
     console.error('Order API request failed:', error);
@@ -77,7 +93,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
         const errorData = JSON.parse(responseText);
         if (errorData.detail) {
           errorMessage = Array.isArray(errorData.detail)
-            ? errorData.detail.map((d: any) => d.msg || d).join(', ')
+            ? errorData.detail.map(readValidationMessage).join(', ')
             : errorData.detail;
         } else if (errorData.message) {
           errorMessage = errorData.message;

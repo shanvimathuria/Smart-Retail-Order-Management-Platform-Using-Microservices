@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface AdminContextType {
   adminUser: AdminUser | null;
@@ -19,24 +19,36 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 const ADMIN_USER_KEY = 'admin_user';
 const ADMIN_TOKEN_KEY = 'admin_token';
 
+const readAdminSession = (): { user: AdminUser | null; token: string | null } => {
+  if (typeof window === 'undefined') {
+    return { user: null, token: null };
+  }
+
+  const storedAdminUser = localStorage.getItem(ADMIN_USER_KEY);
+  const storedAdminToken = localStorage.getItem(ADMIN_TOKEN_KEY);
+
+  if (!storedAdminUser || !storedAdminToken) {
+    return { user: null, token: null };
+  }
+
+  try {
+    return {
+      user: JSON.parse(storedAdminUser) as AdminUser,
+      token: storedAdminToken,
+    };
+  } catch {
+    localStorage.removeItem(ADMIN_USER_KEY);
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    return { user: null, token: null };
+  }
+};
+
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [adminToken, setAdminToken] = useState<string | null>(null);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(true);
-
-  useEffect(() => {
-    const storedAdminUser = localStorage.getItem(ADMIN_USER_KEY);
-    const storedAdminToken = localStorage.getItem(ADMIN_TOKEN_KEY);
-
-    if (storedAdminUser && storedAdminToken) {
-      setAdminUser(JSON.parse(storedAdminUser));
-      setAdminToken(storedAdminToken);
-      setIsAdminAuthenticated(true);
-    }
-
-    setIsAdminLoading(false);
-  }, []);
+  const [initialSession] = useState(readAdminSession);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(initialSession.user);
+  const [adminToken, setAdminToken] = useState<string | null>(initialSession.token);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(Boolean(initialSession.user && initialSession.token));
+  const [isAdminLoading] = useState(false);
 
   const adminLogin = async (id: string, password: string): Promise<void> => {
     // Hard-coded credentials for demo: ID=admin, Password=admin123

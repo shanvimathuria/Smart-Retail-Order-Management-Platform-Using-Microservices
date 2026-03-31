@@ -31,7 +31,7 @@ const Profile: React.FC = () => {
       await updateProfile(formData);
       setIsEditing(false);
       showToast('Profile updated successfully!');
-    } catch (error) {
+    } catch {
       showToast('Failed to update profile. Please try again.');
     }
   };
