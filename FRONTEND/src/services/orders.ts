@@ -26,7 +26,6 @@ export interface OrderResponse {
   items: OrderItem[];
 }
 
-// ✅ FORCE convert HeadersInit → plain object safely
 const normalizeHeaders = (headers: HeadersInit | undefined): Record<string, string> => {
   const result: Record<string, string> = {};
 
@@ -46,7 +45,6 @@ const normalizeHeaders = (headers: HeadersInit | undefined): Record<string, stri
     return result;
   }
 
-  // final fallback
   return headers as Record<string, string>;
 };
 
@@ -60,17 +58,18 @@ const readValidationMessage = (detail: unknown): string => {
 const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const authHeaders = normalizeHeaders(getStoredAuthHeader());
 
-  // ✅ FORCE type as plain object (breaks TS confusion completely)
+  // ✅ CHECK AUTH HERE (NOT from requestHeaders)
+  const authHeader = authHeaders["Authorization"];
+
+  if (!authHeader) {
+    throw new Error('User not authenticated. Please login to access orders.');
+  }
+
   const requestHeaders = {
     'Content-Type': 'application/json',
     ...authHeaders,
     ...normalizeHeaders(init?.headers),
   } as Record<string, string>;
-
-  // ✅ SAFE ACCESS
-  if (!requestHeaders["Authorization"]) {
-    throw new Error('User not authenticated. Please login to access orders.');
-  }
 
   let response: Response;
 
@@ -84,13 +83,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
     throw new Error('Unable to reach the order service. Check that the backend is running.');
   }
 
-  let responseText: string;
-
-  try {
-    responseText = await response.text();
-  } catch {
-    throw new Error('Failed to read response from order service.');
-  }
+  const responseText = await response.text();
 
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
@@ -121,11 +114,7 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
     throw new Error('Empty response from order service');
   }
 
-  try {
-    return JSON.parse(responseText) as T;
-  } catch {
-    throw new Error('Invalid JSON response from order service');
-  }
+  return JSON.parse(responseText) as T;
 };
 
 // API functions
