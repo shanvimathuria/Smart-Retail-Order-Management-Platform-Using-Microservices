@@ -2,7 +2,7 @@ import type { SignupFormData, User } from '../types';
 
 const USER_API_BASE_URL = (
   import.meta.env.VITE_USER_API_URL ??
-  (import.meta.env.DEV ? '/api/user' : 'http://127.0.0.1:8002')
+  (import.meta.env.DEV ? '/api/user' : 'VITE_USER_API_URL')
 ).replace(/\/$/, '');
 
 type BackendUserRecord = {
