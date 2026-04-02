@@ -14,14 +14,26 @@ from app import models, schemas
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
-INVENTORY_SERVICE_URL = os.getenv(
+def _get_service_url(env_name: str, local_default: str, render_default: str) -> str:
+    configured = os.getenv(env_name)
+    if configured:
+        return configured.rstrip("/")
+
+    is_render = bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
+    default_value = render_default if is_render else local_default
+    return default_value.rstrip("/")
+
+
+INVENTORY_SERVICE_URL = _get_service_url(
     "INVENTORY_SERVICE_URL",
-    "http://127.0.0.1:8003"
+    "http://127.0.0.1:8003/products",
+    "https://inventory-service-qxlj.onrender.com/products",
 )
 
-PAYMENT_SERVICE_URL = os.getenv(
+PAYMENT_SERVICE_URL = _get_service_url(
     "PAYMENT_SERVICE_URL",
-    "http://127.0.0.1:8001"
+    "http://127.0.0.1:8001/payments",
+    "https://payment-service-scsg.onrender.com/payments",
 )
 
 def _extract_service_error(response: httpx.Response) -> str:
