@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiMinus, FiPlus, FiTrash2, FiShoppingBag, FiArrowLeft } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -10,6 +10,7 @@ import './Cart.css';
 const Cart: React.FC = () => {
   const { items, updateQuantity, removeItem, clearCart, getTotalPrice } = useCart();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
 
   if (items.length === 0) {
@@ -33,7 +34,7 @@ const Cart: React.FC = () => {
   const handleCheckout = () => {
     if (!isAuthenticated) {
       // Redirect to login if not authenticated
-      window.location.href = '/login?redirect=/cart';
+      navigate('/login?redirect=/cart');
       return;
     }
     setIsCheckoutModalOpen(true);
