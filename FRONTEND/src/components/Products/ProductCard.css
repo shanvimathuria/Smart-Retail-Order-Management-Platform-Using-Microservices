@@ -168,10 +168,9 @@
 }
 
 .product-footer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.75rem;
   margin-top: auto;
 }
 
@@ -179,8 +178,8 @@
   font-size: 1.25rem;
   font-weight: 700;
   color: #1a202c;
-  min-width: 0;
-  padding-right: 0.25rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .add-to-cart-btn {
@@ -198,8 +197,7 @@
   gap: 0.4rem;
   transition: all 0.3s ease;
   white-space: nowrap;
-  min-width: 7.75rem;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .add-to-cart-btn:hover:not(:disabled) {

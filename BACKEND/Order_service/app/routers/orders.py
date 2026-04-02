@@ -14,9 +14,15 @@ from app import models, schemas
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
-INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL", "http://127.0.0.1:8003/products")
-PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://127.0.0.1:8001/payments")
+INVENTORY_SERVICE_URL = os.getenv(
+    "INVENTORY_SERVICE_URL",
+    "http://127.0.0.1:8003"
+)
 
+PAYMENT_SERVICE_URL = os.getenv(
+    "PAYMENT_SERVICE_URL",
+    "http://127.0.0.1:8001"
+)
 
 def _extract_service_error(response: httpx.Response) -> str:
     try:

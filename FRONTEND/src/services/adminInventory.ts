@@ -5,42 +5,6 @@ const INVENTORY_API_BASE_URL = (
   (import.meta.env.DEV ? '/api/inventory' : 'http://127.0.0.1:8003')
 ).replace(/\/$/, '');
 
-type JsonRecord = Record<string, unknown>;
-
-type BackendCategoryRecord = {
-  id: number | string;
-  category_name: string;
-  description?: string | null;
-  created_at?: string;
-  image_url?: string | null;
-};
-
-type BackendProductRecord = {
-  id: number | string;
-  product_name: string;
-  description?: string | null;
-  price: number | string;
-  image_url?: string | null;
-  category_id: number | string;
-  created_at?: string;
-  stock_quantity?: number | null;
-};
-
-const toRecordList = <T>(payload: unknown): T[] => {
-  if (Array.isArray(payload)) {
-    return payload as T[];
-  }
-
-  if (payload && typeof payload === 'object') {
-    const nestedValue = (payload as JsonRecord).value;
-    if (Array.isArray(nestedValue)) {
-      return nestedValue as T[];
-    }
-  }
-
-  return [];
-};
-
 // Category Management APIs
 export const fetchCategoriesAdmin = async (): Promise<StoreCategory[]> => {
   const response = await fetch(`${INVENTORY_API_BASE_URL}/categories/`);
@@ -50,13 +14,13 @@ export const fetchCategoriesAdmin = async (): Promise<StoreCategory[]> => {
   }
 
   const payload = await response.json();
-  const records = toRecordList<BackendCategoryRecord>(payload);
+  const records = Array.isArray(payload) ? payload : Array.isArray(payload?.value) ? payload.value : [];
 
-  return records.map((record) => ({
-    id: Number(record.id),
+  return records.map((record: any) => ({
+    id: record.id,
     name: record.category_name,
     description: record.description || '',
-    createdAt: record.created_at || '',
+    createdAt: record.created_at,
     slug: record.category_name.toLowerCase().replace(/\s+/g, '-'),
     productCategoryKey: record.category_name.toLowerCase().replace(/\s+/g, '-'),
     imageUrl: record.image_url || '',
@@ -112,19 +76,19 @@ export const fetchProductsAdmin = async (): Promise<Product[]> => {
   }
 
   const payload = await response.json();
-  const records = toRecordList<BackendProductRecord>(payload);
+  const records = Array.isArray(payload) ? payload : Array.isArray(payload?.value) ? payload.value : [];
 
-  return records.map((record) => ({
+  return records.map((record: any) => ({
     id: String(record.id),
     name: record.product_name,
     description: record.description || '',
     price: Number(record.price),
     imageUrl: record.image_url || '/api/placeholder/200/200',
     category: `category-${record.category_id}`,
-    categoryId: Number(record.category_id),
+    categoryId: record.category_id,
     categoryLabel: `Category ${record.category_id}`,
     productCategoryKey: `category-${record.category_id}`,
-    createdAt: record.created_at || '',
+    createdAt: record.created_at,
     stock: record.stock_quantity || 0,
     rating: null,
     reviews: null,

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '../context/AdminContext';
 import { fetchCategoriesAdmin, addCategory, deleteCategory, fetchProductsAdmin, addProduct, deleteProduct } from '../services/adminInventory';
@@ -75,7 +75,19 @@ const InventoryManagement: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const loadCategories = useCallback(async () => {
+  // Fetch categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Fetch items when category is selected
+  useEffect(() => {
+    if (selectedCategoryId) {
+      loadItemsForCategory(selectedCategoryId);
+    }
+  }, [selectedCategoryId]);
+
+  const loadCategories = async () => {
     try {
       setLoadingCategories(true);
       const fetchedCategories = await fetchCategoriesAdmin();
@@ -91,19 +103,7 @@ const InventoryManagement: React.FC = () => {
     } finally {
       setLoadingCategories(false);
     }
-  }, [selectedCategoryId]);
-
-  // Fetch categories on mount
-  useEffect(() => {
-    void loadCategories();
-  }, [loadCategories]);
-
-  // Fetch items when category is selected
-  useEffect(() => {
-    if (selectedCategoryId) {
-      void loadItemsForCategory(selectedCategoryId);
-    }
-  }, [selectedCategoryId]);
+  };
 
   const loadItemsForCategory = async (categoryId: string) => {
     try {
